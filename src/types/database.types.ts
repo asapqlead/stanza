@@ -306,3 +306,13 @@ export const Constants = {
     },
   },
 } as const
+
+// --- App-level convenience types (derived from generated schema) ---
+
+export type Task = Database['public']['Tables']['tasks']['Row'];
+export type Profile = Database['public']['Tables']['profiles']['Row'];
+export type TaskAssignee = Database['public']['Tables']['task_assignees']['Row'];
+export type Attachment = Database['public']['Tables']['attachments']['Row'];
+export type UrgencyLevel = Database['public']['Enums']['urgency_level'];
+
+export type NavTab = 'home' | 'calendar' | 'settings';
