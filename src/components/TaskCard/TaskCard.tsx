@@ -263,14 +263,14 @@ export const TaskCardStacked = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <Calendar size={15} color="rgba(28,28,30,0.55)" />
-              <span style={{ fontSize: 20, color: 'rgba(28,28,30,0.55)', fontWeight: 500 }}>
+              <span style={{ fontSize: 15, color: 'rgba(28,28,30,0.55)', fontWeight: 500 }}>
                 {formatShortDate(task.due_date)}
               </span>
             </div>
             {task.due_time && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <Clock size={15} color="rgba(28,28,30,0.55)" />
-                <span style={{ fontSize: 20, color: 'rgba(28,28,30,0.55)', fontWeight: 500 }}>
+                <span style={{ fontSize: 15, color: 'rgba(28,28,30,0.55)', fontWeight: 500 }}>
                   {formatTime(task.due_time)}
                 </span>
               </div>
