@@ -32,9 +32,12 @@ export const NavBar = ({ onTabChange }: NavBarProps) => {
       aria-label="Main navigation"
       style={{
         position: 'fixed',
-        // Sits just above the device's own safe-area inset instead of stacking
-        // extra space on top of it — keeps the bar close to the bottom edge on mobile.
-        bottom: `max(var(--safe-bottom), 8px)`,
+        // Sits just above the device's own safe-area inset. Clamped so the bar
+        // stays tight to the bottom edge even if safe-area-inset-bottom is
+        // reported larger than a real home-indicator inset (some browsers/
+        // preview wrappers over-report this, which was pushing the bar too
+        // far up the screen).
+        bottom: `clamp(8px, var(--safe-bottom), 20px)`,
         left: 16,
         right: 16,
         height: 52,
