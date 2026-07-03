@@ -118,9 +118,11 @@ interface DayFolderProps {
   onToggleComplete: (taskId: string, completed: boolean) => void;
   /** Called immediately for on-the-fly UI updates; network call happens separately. */
   onRemove: (taskId: string) => void;
+  /** Called if the delete actually fails, so the card can be restored. */
+  onRemoveFailed: (task: Task) => void;
 }
 
-export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove }: DayFolderProps) => {
+export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemoveFailed }: DayFolderProps) => {
   const { activeDate, setActiveDate, folderExpanded, setFolderExpanded, setAddTaskOpen } = useAppStore();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [direction, setDirection] = useState(0);
@@ -149,11 +151,17 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove }: DayFol
 
   const handleDeleteTask = async () => {
     if (!selectedTask) return;
-    const taskId = selectedTask.id;
-    onRemove(taskId); // instant local removal
+    const taskToDelete = selectedTask;
+    onRemove(taskToDelete.id); // instant local removal
     setSelectedTask(null);
+
     const { deleteTask } = await import('../../utils/taskMutations');
-    deleteTask(taskId); // fire-and-forget network call
+    const { error } = await deleteTask(taskToDelete.id);
+
+    if (error) {
+      console.error('Failed to delete task:', error);
+      onRemoveFailed(taskToDelete); // restore the card on failure
+    }
   };
 
   return (

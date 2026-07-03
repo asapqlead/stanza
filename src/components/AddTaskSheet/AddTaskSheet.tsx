@@ -30,9 +30,11 @@ const URGENCY_COLORS: Record<UrgencyLevel, string> = {
 interface AddTaskSheetProps {
   /** Called immediately with a temp task so the card appears on the fly, before the insert resolves. */
   onOptimisticAdd: (task: Task) => void;
+  /** Called if the insert actually fails, so the temp card can be removed again. */
+  onAddFailed: (tempId: string) => void;
 }
 
-export const AddTaskSheet = ({ onOptimisticAdd }: AddTaskSheetProps) => {
+export const AddTaskSheet = ({ onOptimisticAdd, onAddFailed }: AddTaskSheetProps) => {
   const { addTaskOpen, setAddTaskOpen, activeDate } = useAppStore();
   const { light } = useHaptic();
 
@@ -70,8 +72,9 @@ export const AddTaskSheet = ({ onOptimisticAdd }: AddTaskSheetProps) => {
     reset({ urgency: 'Medium', due_date: activeDate });
     setAddTaskOpen(false);
 
-    // Fire-and-forget — Realtime INSERT event will replace the temp row with the real one.
-    createTask({
+    // Await the real insert — if it fails, roll back the optimistic card
+    // instead of silently losing the task on next reload.
+    const { error } = await createTask({
       user_id: user.id,
       title: data.title,
       description: data.description ?? null,
@@ -80,6 +83,11 @@ export const AddTaskSheet = ({ onOptimisticAdd }: AddTaskSheetProps) => {
       due_time: data.due_time ?? null,
       sort_order: 0,
     });
+
+    if (error) {
+      console.error('Failed to save task:', error);
+      onAddFailed(tempTask.id);
+    }
   };
 
   const handleClose = () => {

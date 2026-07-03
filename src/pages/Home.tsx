@@ -46,8 +46,12 @@ export const Home = ({ onAvatarTap, onDateTap }: HomeProps) => {
         loading={loading}
         onToggleComplete={optimisticComplete}
         onRemove={optimisticRemove}
+        onRemoveFailed={optimisticAdd}
       />
-      <AddTaskSheet onOptimisticAdd={optimisticAdd} />
+      <AddTaskSheet
+        onOptimisticAdd={optimisticAdd}
+        onAddFailed={optimisticRemove}
+      />
     </div>
   );
 };
