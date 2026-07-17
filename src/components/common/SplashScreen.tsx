@@ -15,18 +15,12 @@ export const SplashScreen = () => (
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
     >
-      <h1 style={{ fontSize: 36, fontWeight: 700, letterSpacing: -1 }}>
-        Stanza
-        <span style={{
-          display: 'inline-block',
-          width: 7,
-          height: 7,
-          borderRadius: '50%',
-          background: 'var(--color-yellow)',
-          marginLeft: 3,
-          verticalAlign: 'super',
-        }} />
-      </h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <img src="/icons/stanza-logo.png" alt="" style={{ height: 48, objectFit: 'contain' }} />
+        <h1 style={{ fontSize: 40, fontWeight: 700, letterSpacing: -1, lineHeight: 1 }}>
+          Stanza
+        </h1>
+      </div>
     </motion.div>
     <motion.div
       initial={{ opacity: 0 }}
