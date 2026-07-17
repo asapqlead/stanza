@@ -181,7 +181,7 @@ export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps
  * Only 3 slots are shown. If there are more than 3 pending tasks a
  * grey "+N" card takes the topmost peek slot.
  * ---------------------------------------------------------------------- */
-const PEEK_HEIGHT = 48;       // how much of each peeking card is visible
+const PEEK_HEIGHT = 64;       // how much of each peeking card is visible
 const FRONT_HEIGHT = 200;     // full front card height
 
 export const TaskCardStacked = ({

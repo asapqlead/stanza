@@ -144,7 +144,7 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemove
 
   // Dynamically compute how many cards fit: reserve space for the expand
   // hint (~36px), the fixed bottom nav bar (52px + ~20px safe area), and padding.
-  const PEEK_H = 48;
+  const PEEK_H = 64;
   const FRONT_H = 200;
   const NAV_BAR_RESERVE = 104; // nav bar (52) + safe area (~20) + ~30px margin
   const HINT_SPACE = 36;
