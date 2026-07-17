@@ -139,20 +139,18 @@ export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps
           </p>
 
           {/* Description */}
-          {task.description && (
-            <p style={{
-              fontSize: 14.5,
-              color: 'rgba(28,28,30,0.6)',
-              marginTop: 6,
-              lineHeight: 1.4,
-              overflow: 'hidden',
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-            }}>
-              {task.description}
-            </p>
-          )}
+          <p style={{
+            fontSize: 14.5,
+            color: 'rgba(28,28,30,0.6)',
+            marginTop: 6,
+            lineHeight: 1.4,
+            overflow: 'hidden',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+          }}>
+            {task.description || 'Add a description...'}
+          </p>
 
           {/* Meta row */}
           {task.due_time && (
@@ -175,157 +173,244 @@ export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps
 };
 
 /* ------------------------------------------------------------------------
- * Stacked folder-tab card.
- * index 0 = front card, shown fully expanded with title/desc/date/avatars/badge.
- * index 1..n = peeking cards behind it, showing a visible colored strip.
- * When there are more pending tasks than fit in the stack, the last visible
- * peeking card shows a "+N" badge for the remaining hidden count.
+ * Wallet-style card stack (iOS-inspired).
+ * Cards stack vertically — peek cards sit ABOVE the front card, each
+ * showing a strip with the task title visible. The front (fully-detailed)
+ * card is at the BOTTOM of the stack, fully expanded.
+ * All cards share the same width (no horizontal inset).
+ * Only 3 slots are shown. If there are more than 3 pending tasks a
+ * grey "+N" card takes the topmost peek slot.
  * ---------------------------------------------------------------------- */
+const PEEK_HEIGHT = 48;       // how much of each peeking card is visible
+const FRONT_HEIGHT = 200;     // full front card height
+
 export const TaskCardStacked = ({
-  task,
-  index,
-  total,
+  tasks,
   overflowCount = 0,
 }: {
-  task: Task;
-  index: number;
-  total: number;
+  tasks: Task[];
   overflowCount?: number;
 }) => {
+  if (tasks.length === 0) return null;
+
+  const hasOverflow = overflowCount > 0;
+  const peekTasks = tasks.slice(1);      // everything except the front card
+
+  // Build peek slots — furthest-back first (top of visual stack),
+  // nearest to front last (just above the front card).
+  // If overflow exists it's the very top slot.
+  const peekSlots: { type: 'overflow' | 'task'; task?: Task }[] = [
+    ...(hasOverflow ? [{ type: 'overflow' as const }] : []),
+    ...[...peekTasks].reverse().map(t => ({ type: 'task' as const, task: t })),
+  ];
+
+  const totalPeeks = peekSlots.length;
+  const containerHeight = FRONT_HEIGHT + totalPeeks * PEEK_HEIGHT;
+
+  return (
+    <div style={{
+      position: 'relative',
+      height: containerHeight,
+      width: '100%',
+      overflow: 'hidden',
+      borderRadius: 'var(--radius-lg)',
+    }}>
+      {peekSlots.map((slot, i) => {
+        const top = i * PEEK_HEIGHT;
+        const zIndex = i + 1;
+        return slot.type === 'overflow' ? (
+          <OverflowPeek
+            key="overflow"
+            top={top}
+            zIndex={zIndex}
+            count={overflowCount}
+          />
+        ) : (
+          <TaskPeek
+            key={slot.task!.id}
+            task={slot.task!}
+            top={top}
+            zIndex={zIndex}
+          />
+        );
+      })}
+
+      {/* Front card — at the bottom, highest zIndex, fully expanded */}
+      <FrontCard
+        task={tasks[0]}
+        top={totalPeeks * PEEK_HEIGHT}
+        zIndex={totalPeeks + 1}
+      />
+    </div>
+  );
+};
+
+const FrontCard = ({ task, top, zIndex }: { task: Task; top: number; zIndex: number }) => {
   const bg = CARD_COLORS[task.urgency] ?? 'var(--color-amber-card)';
-  const isFront = index === 0;
-  const offset = index * 14;
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top,
+        left: 0,
+        right: 0,
+        height: FRONT_HEIGHT,
+        borderRadius: 'var(--radius-lg)',
+        background: bg,
+        overflow: 'hidden',
+        zIndex,
+        boxShadow: '0 -4px 12px rgba(0,0,0,0.25), 0 -1px 3px rgba(0,0,0,0.15)',
+      }}
+    >
+      <div style={{ padding: '20px var(--space-xl)', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: -4 }}>
+          <div style={{
+            background: 'rgba(0,0,0,0.15)', borderRadius: 'var(--radius-pill)',
+            padding: '5px 14px', fontSize: 11, fontWeight: 700,
+            color: 'var(--color-text-dark)', letterSpacing: 0.4,
+          }}>
+            {task.urgency.toUpperCase()}
+          </div>
+        </div>
+
+        <p style={{
+          fontSize: 30, fontWeight: 700, color: 'var(--color-text-dark)',
+          lineHeight: 1.25, marginTop: 4, overflow: 'hidden',
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+        }}>
+          {task.title}
+        </p>
+
+        <p style={{
+          fontSize: 14, color: 'rgba(28,28,30,0.65)', marginTop: 8, lineHeight: 1.4,
+          overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+        }}>
+          {task.description || 'Add a description...'}
+        </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 'auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Calendar size={15} color="rgba(28,28,30,0.55)" />
+            <span style={{ fontSize: 15, color: 'rgba(28,28,30,0.55)', fontWeight: 500 }}>
+              {formatShortDate(task.due_date)}
+            </span>
+          </div>
+          {task.due_time && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Clock size={15} color="rgba(28,28,30,0.55)" />
+              <span style={{ fontSize: 15, color: 'rgba(28,28,30,0.55)', fontWeight: 500 }}>
+                {formatTime(task.due_time)}
+              </span>
+            </div>
+          )}
+        </div>
+
+
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Peek card — sits above the front card showing a visible strip with the
+ * task title and priority badge. Full-height card behind, only the top
+ * PEEK_HEIGHT is visible before the next card covers the rest.
+ */
+const TaskPeek = ({
+  task, top, zIndex,
+}: { task: Task; top: number; zIndex: number }) => {
+  const bg = CARD_COLORS[task.urgency] ?? 'var(--color-amber-card)';
 
   return (
     <div
       style={{
         position: 'absolute',
-        top: offset,
-        left: offset / 2,
-        right: offset / 2,
+        top,
+        left: 0,
+        right: 0,
+        bottom: 0,
         borderRadius: 'var(--radius-lg)',
         background: bg,
+        zIndex,
+        boxShadow: '0 -4px 12px rgba(0,0,0,0.25), 0 -1px 3px rgba(0,0,0,0.15)',
         overflow: 'hidden',
-        zIndex: total - index,
-        height: isFront ? 'auto' : `calc(100% - ${offset}px)`,
-        minHeight: isFront ? 200 : 40,
-        boxShadow: isFront
-          ? '0 8px 20px rgba(0,0,0,0.35)'
-          : `0 ${2 + index}px 8px rgba(0,0,0,0.22)`,
       }}
     >
-      {isFront ? (
-        <div style={{ padding: '20px var(--space-xl)', width: '100%' }}>
-          {/* Share icon, top-right */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: -4 }}>
-            <div style={{
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              background: 'rgba(0,0,0,0.12)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Share2 size={15} color="var(--color-text-dark)" />
-            </div>
-          </div>
-
-          <p style={{
-            fontSize: 30,
-            fontWeight: 700,
-            color: 'var(--color-text-dark)',
-            lineHeight: 1.25,
-            marginTop: 4,
-            overflow: 'hidden',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-          }}>
-            {task.title}
-          </p>
-
-          {task.description && (
-            <p style={{
-              fontSize: 14,
-              color: 'rgba(28,28,30,0.65)',
-              marginTop: 8,
-              lineHeight: 1.4,
-              overflow: 'hidden',
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-            }}>
-              {task.description}
-            </p>
-          )}
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Calendar size={15} color="rgba(28,28,30,0.55)" />
-              <span style={{ fontSize: 15, color: 'rgba(28,28,30,0.55)', fontWeight: 500 }}>
-                {formatShortDate(task.due_date)}
-              </span>
-            </div>
-            {task.due_time && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Clock size={15} color="rgba(28,28,30,0.55)" />
-                <span style={{ fontSize: 15, color: 'rgba(28,28,30,0.55)', fontWeight: 500 }}>
-                  {formatTime(task.due_time)}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
-            {/* Assignee avatar stack placeholder — wire up to real assignees when available */}
-            <div style={{ display: 'flex' }}>
-              {[0, 1, 2].map(i => (
-                <div key={i} style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: '50%',
-                  background: 'rgba(0,0,0,0.2)',
-                  marginLeft: i === 0 ? 0 : -10,
-                  border: `2px solid ${bg}`,
-                }} />
-              ))}
-            </div>
-            <div style={{
-              background: 'rgba(0,0,0,0.15)',
-              borderRadius: 'var(--radius-pill)',
-              padding: '5px 14px',
-              fontSize: 11,
-              fontWeight: 700,
-              color: 'var(--color-text-dark)',
-              letterSpacing: 0.4,
-            }}>
-              {task.urgency}
-            </div>
-          </div>
-        </div>
-      ) : (
-        // Peeking card — just a visible colored strip behind the front card
-        <div style={{ width: '100%', height: 34 }} />
-      )}
-
-      {/* Overflow badge on the last visible peeking card */}
-      {overflowCount > 0 && index === total - 1 && (
-        <div style={{
-          position: 'absolute',
-          bottom: 6,
-          right: 14,
-          background: 'var(--color-bg)',
-          border: '2px solid var(--color-card)',
-          borderRadius: 'var(--radius-pill)',
-          padding: '3px 10px',
-          fontSize: 12,
+      {/* Title row — visible in the peek strip */}
+      <div style={{
+        height: PEEK_HEIGHT,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 20px',
+      }}>
+        <p style={{
+          fontSize: 16,
           fontWeight: 700,
-          color: 'var(--color-white)',
+          color: 'var(--color-text-dark)',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          flex: 1,
+          marginRight: 12,
         }}>
-          +{overflowCount}
+          {task.title}
+        </p>
+        <div style={{
+          flexShrink: 0,
+          background: 'rgba(0,0,0,0.1)',
+          borderRadius: 'var(--radius-pill)',
+          padding: '4px 10px',
+          fontSize: 10,
+          fontWeight: 700,
+          color: 'var(--color-text-dark)',
+          letterSpacing: 0.5,
+        }}>
+          {task.urgency.toUpperCase()}
         </div>
-      )}
+      </div>
     </div>
   );
 };
+
+/**
+ * Grey "+N more" card — topmost peek slot, shown only when there are
+ * more than 3 pending tasks.
+ */
+const OverflowPeek = ({
+  top, zIndex, count,
+}: { top: number; zIndex: number; count: number }) => {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        borderRadius: 'var(--radius-lg)',
+        background: 'var(--color-mid)',
+        zIndex,
+        boxShadow: '0 -4px 12px rgba(0,0,0,0.25), 0 -1px 3px rgba(0,0,0,0.15)',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{
+        height: PEEK_HEIGHT,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <span style={{
+          fontSize: 13,
+          fontWeight: 700,
+          color: 'var(--color-grey)',
+          letterSpacing: 0.3,
+        }}>
+          +{count} more
+        </span>
+      </div>
+    </div>
+  );
+};
+

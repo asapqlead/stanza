@@ -1,14 +1,14 @@
 import { motion } from 'framer-motion';
-import { Home, CalendarDays, Settings } from 'lucide-react';
+import { Home, CalendarDays, Plus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import type { NavTab } from '../../types/database.types';
 import { format } from 'date-fns';
 
-const NAV_TABS: { id: NavTab; icon: LucideIcon; label: string }[] = [
+const NAV_TABS: { id: NavTab | 'add'; icon: LucideIcon; label: string }[] = [
   { id: 'home', icon: Home, label: 'Home' },
+  { id: 'add', icon: Plus, label: 'Add Task' },
   { id: 'calendar', icon: CalendarDays, label: 'Calendar' },
-  { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 
 interface NavBarProps {
@@ -16,14 +16,18 @@ interface NavBarProps {
 }
 
 export const NavBar = ({ onTabChange }: NavBarProps) => {
-  const { activeNav, setActiveNav, setActiveDate } = useAppStore();
+  const { activeNav, setActiveNav, setActiveDate, setAddTaskOpen } = useAppStore();
 
-  const handleTab = (tab: NavTab) => {
+  const handleTab = (tab: NavTab | 'add') => {
+    if (tab === 'add') {
+      setAddTaskOpen(true);
+      return;
+    }
     if (tab === 'home' && activeNav === 'home') {
       setActiveDate(format(new Date(), 'yyyy-MM-dd'));
     }
-    setActiveNav(tab);
-    onTabChange(tab);
+    setActiveNav(tab as NavTab);
+    onTabChange(tab as NavTab);
   };
 
   return (
@@ -59,9 +63,9 @@ export const NavBar = ({ onTabChange }: NavBarProps) => {
         return (
           <button
             key={tab.id}
-            role="tab"
-            aria-selected={isActive}
-            aria-label={`${tab.label}, tab ${i + 1} of 3`}
+            role={tab.id === 'add' ? 'button' : 'tab'}
+            aria-selected={tab.id === 'add' ? undefined : isActive}
+            aria-label={tab.id === 'add' ? 'Add new task' : `${tab.label}, tab ${i + 1} of 3`}
             onClick={() => handleTab(tab.id)}
             style={{
               flex: 1,
@@ -79,37 +83,49 @@ export const NavBar = ({ onTabChange }: NavBarProps) => {
               minWidth: 44,
             }}
           >
-            {isActive && (
-              <motion.div
-                layoutId="nav-indicator"
-                transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-                style={{
-                  position: 'absolute',
-                  inset: 3,
-                  background: 'var(--color-yellow)',
-                  borderRadius: 'var(--radius-pill)',
-                  zIndex: 0,
-                }}
-              />
-            )}
-            <div style={{ position: 'relative', zIndex: 1 }}>
-              <Icon
-                size={21}
-                strokeWidth={1.75}
-                color={isActive ? 'var(--color-text-dark)' : 'var(--color-grey)'}
-              />
-            </div>
-            {isActive && (
-              <span style={{
-                position: 'relative',
-                zIndex: 1,
-                fontSize: 9,
-                fontWeight: 600,
-                color: 'var(--color-text-dark)',
-                lineHeight: 1,
+            {tab.id === 'add' ? (
+              <div style={{
+                width: 44, height: 44, borderRadius: '50%', background: 'var(--color-yellow)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
               }}>
-                {tab.label}
-              </span>
+                <Icon size={24} color="var(--color-text-dark)" strokeWidth={2.5} />
+              </div>
+            ) : (
+              <>
+                {isActive && (
+                  <motion.div
+                    layoutId="nav-indicator"
+                    transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+                    style={{
+                      position: 'absolute',
+                      inset: 3,
+                      background: 'var(--color-yellow)',
+                      borderRadius: 'var(--radius-pill)',
+                      zIndex: 0,
+                    }}
+                  />
+                )}
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                  <Icon
+                    size={21}
+                    strokeWidth={1.75}
+                    color={isActive ? 'var(--color-text-dark)' : 'var(--color-grey)'}
+                  />
+                </div>
+                {isActive && (
+                  <span style={{
+                    position: 'relative',
+                    zIndex: 1,
+                    fontSize: 9,
+                    fontWeight: 600,
+                    color: 'var(--color-text-dark)',
+                    lineHeight: 1,
+                  }}>
+                    {tab.label}
+                  </span>
+                )}
+              </>
             )}
           </button>
         );

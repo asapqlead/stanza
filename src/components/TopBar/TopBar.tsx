@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { formatWeekday, formatDayNum, formatMonth } from '../../utils/date';
 
@@ -10,7 +10,7 @@ interface TopBarProps {
 }
 
 export const TopBar = ({ onAvatarTap, onDateTap, displayName, avatarUrl }: TopBarProps) => {
-  const { activeDate, setAddTaskOpen } = useAppStore();
+  const { activeDate, setActiveNav } = useAppStore();
 
   const initials = displayName
     ? displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
@@ -72,15 +72,15 @@ export const TopBar = ({ onAvatarTap, onDateTap, displayName, avatarUrl }: TopBa
         </span>
       </button>
 
-      {/* Add task button */}
+      {/* Settings button */}
       <button
-        onClick={() => setAddTaskOpen(true)}
-        aria-label={`Add new task for ${formatWeekday(activeDate)} ${formatDayNum(activeDate)}`}
+        onClick={() => setActiveNav('settings')}
+        aria-label="Settings"
         style={{
           width: 36,
           height: 36,
           borderRadius: '50%',
-          background: 'var(--color-yellow)',
+          background: 'rgba(255,255,255,0.15)',
           border: 'none',
           display: 'flex',
           alignItems: 'center',
@@ -89,7 +89,7 @@ export const TopBar = ({ onAvatarTap, onDateTap, displayName, avatarUrl }: TopBa
           flexShrink: 0,
         }}
       >
-        <Plus size={20} color="var(--color-text-dark)" strokeWidth={2.5} />
+        <Settings size={20} color="var(--color-white)" />
       </button>
     </div>
   );

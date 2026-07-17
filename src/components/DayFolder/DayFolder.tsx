@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Plus, ChevronDown } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useSwipe } from '../../hooks/useSwipe';
@@ -66,11 +66,9 @@ const TaskDetailSheet = ({ task, onClose, onDelete }: TaskDetailSheetProps) => {
         {task.title}
       </h2>
 
-      {task.description && (
-        <p style={{ fontSize: 14, color: 'var(--color-grey)', lineHeight: 1.6, marginBottom: 16 }}>
-          {task.description}
-        </p>
-      )}
+      <p style={{ fontSize: 14, color: 'var(--color-grey)', lineHeight: 1.6, marginBottom: 16 }}>
+        {task.description || 'Add a description...'}
+      </p>
 
       <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
         {task.due_time && (
@@ -126,11 +124,37 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemove
   const { activeDate, setActiveDate, folderExpanded, setFolderExpanded, setAddTaskOpen } = useAppStore();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [direction, setDirection] = useState(0);
+  const folderRef = useRef<HTMLDivElement>(null);
+  const [folderHeight, setFolderHeight] = useState(0);
+
+  // Measure the available folder area height
+  useEffect(() => {
+    const measure = () => {
+      if (folderRef.current) {
+        setFolderHeight(folderRef.current.clientHeight);
+      }
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
 
   const pending = pendingTasks(tasks);
   const completed = completedTasks(tasks);
-  const stackVisible = pending.slice(0, 3);
-  const overflowCount = Math.max(0, pending.length - 3);
+
+  // Dynamically compute how many cards fit: reserve space for the expand
+  // hint (~36px), the fixed bottom nav bar (52px + ~20px safe area), and padding.
+  const PEEK_H = 48;
+  const FRONT_H = 200;
+  const NAV_BAR_RESERVE = 104; // nav bar (52) + safe area (~20) + ~30px margin
+  const HINT_SPACE = 36;
+  const availableForStack = folderHeight - HINT_SPACE - NAV_BAR_RESERVE;
+  // maxPeeks = how many peek strips fit above the front card
+  const maxPeeks = Math.max(0, Math.floor((availableForStack - FRONT_H) / PEEK_H));
+  // total cards = front card + peek cards
+  const maxCards = maxPeeks + 1;
+  const stackVisible = pending.slice(0, maxCards);
+  const overflowCount = Math.max(0, pending.length - maxCards);
 
   const goNext = () => {
     setDirection(1);
@@ -242,7 +266,7 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemove
         </div>
 
         {/* Folder area */}
-        <div style={{ flex: 1, padding: '20px var(--space-xl)', overflow: 'hidden', position: 'relative' }}>
+        <div ref={folderRef} style={{ flex: 1, padding: '20px var(--space-xl)', overflow: 'hidden', position: 'relative' }}>
           {loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 40 }}>
               <div style={{
@@ -286,40 +310,18 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemove
               </button>
             </motion.div>
           ) : !folderExpanded ? (
-            /* Stacked view — reference: full front card + peeking cards + "+N" overflow badge */
+            /* Stacked view — reversed: front card at bottom, peeks stacked above */
             <motion.div
-              style={{ position: 'relative', height: 260, cursor: 'pointer' }}
+              style={{ position: 'relative', cursor: 'pointer' }}
               onClick={() => setFolderExpanded(true)}
               aria-label={`${formatWeekday(activeDate)}, ${formatDayNum(activeDate)}, ${pending.length} tasks. Tap to expand.`}
               role="button"
             >
-              {stackVisible.map((task, i) => (
-                <TaskCardStacked
-                  key={task.id}
-                  task={task}
-                  index={i}
-                  total={stackVisible.length}
-                  overflowCount={overflowCount}
-                />
-              ))}
+              <TaskCardStacked
+                tasks={stackVisible}
+                overflowCount={overflowCount}
+              />
 
-              {/* Expand hint */}
-              <div style={{
-                position: 'absolute',
-                bottom: -32,
-                left: 0,
-                right: 0,
-                display: 'flex',
-                justifyContent: 'center',
-              }}>
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 4,
-                  color: 'var(--color-grey)', fontSize: 12,
-                }}>
-                  <ChevronDown size={14} />
-                  <span>tap to expand</span>
-                </div>
-              </div>
             </motion.div>
           ) : (
             /* Expanded list view */
