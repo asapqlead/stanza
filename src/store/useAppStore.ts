@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { NavTab } from '../types/database.types';
+import type { NavTab, Task } from '../types/database.types';
 import { format } from 'date-fns';
 
 interface AppState {
@@ -7,10 +7,12 @@ interface AppState {
   folderExpanded: boolean;
   addTaskOpen: boolean;
   activeNav: NavTab;
+  editingTask: Task | null;
   setActiveDate: (d: string) => void;
   setFolderExpanded: (v: boolean) => void;
   setAddTaskOpen: (v: boolean) => void;
   setActiveNav: (nav: NavTab) => void;
+  setEditingTask: (t: Task | null) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -18,8 +20,10 @@ export const useAppStore = create<AppState>((set) => ({
   folderExpanded: false,
   addTaskOpen: false,
   activeNav: 'home',
+  editingTask: null,
   setActiveDate: (activeDate) => set({ activeDate }),
   setFolderExpanded: (folderExpanded) => set({ folderExpanded }),
   setAddTaskOpen: (addTaskOpen) => set({ addTaskOpen }),
   setActiveNav: (activeNav) => set({ activeNav }),
+  setEditingTask: (editingTask) => set({ editingTask }),
 }));

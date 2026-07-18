@@ -81,5 +81,16 @@ export const useTasks = (date: string) => {
     setTasks(prev => prev.filter(t => t.id !== taskId));
   }, []);
 
-  return { tasks, loading, optimisticComplete, optimisticAdd, optimisticRemove };
+  /** Instantly update a task in local state. */
+  const optimisticUpdate = useCallback((taskId: string, patch: Partial<Task>) => {
+    setTasks(prev =>
+      prev.map(t =>
+        t.id === taskId
+          ? { ...t, ...patch }
+          : t
+      )
+    );
+  }, []);
+
+  return { tasks, loading, optimisticComplete, optimisticAdd, optimisticRemove, optimisticUpdate };
 };

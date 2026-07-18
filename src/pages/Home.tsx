@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { TopBar } from '../components/TopBar/TopBar';
 import { DayFolder } from '../components/DayFolder/DayFolder';
 import { AddTaskSheet } from '../components/AddTaskSheet/AddTaskSheet';
+import { EditTaskSheet } from '../components/EditTaskSheet/EditTaskSheet';
 import { useAppStore } from '../store/useAppStore';
 import { useTasks } from '../hooks/useTasks';
 import { supabase } from '../lib/supabase';
@@ -18,7 +19,7 @@ export const Home = ({ onAvatarTap, onDateTap }: HomeProps) => {
 
   // Single source of truth for the active day's tasks, shared between the
   // folder view and the add-task sheet so both mutate the same optimistic state.
-  const { tasks, loading, optimisticComplete, optimisticAdd, optimisticRemove } =
+  const { tasks, loading, optimisticComplete, optimisticAdd, optimisticRemove, optimisticUpdate } =
     useTasks(activeDate);
 
   useEffect(() => {
@@ -51,6 +52,10 @@ export const Home = ({ onAvatarTap, onDateTap }: HomeProps) => {
       <AddTaskSheet
         onOptimisticAdd={optimisticAdd}
         onAddFailed={optimisticRemove}
+      />
+      <EditTaskSheet
+        onOptimisticUpdate={optimisticUpdate}
+        onUpdateFailed={(id, original) => optimisticUpdate(id, original)}
       />
     </div>
   );

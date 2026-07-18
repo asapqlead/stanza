@@ -12,9 +12,10 @@ interface TaskDetailSheetProps {
   task: Task;
   onClose: () => void;
   onDelete: () => void;
+  onEdit: () => void;
 }
 
-const TaskDetailSheet = ({ task, onClose, onDelete }: TaskDetailSheetProps) => {
+const TaskDetailSheet = ({ task, onClose, onDelete, onEdit }: TaskDetailSheetProps) => {
   const CARD_COLORS: Record<string, string> = {
     Low: 'var(--color-green-card)',
     Medium: 'var(--color-amber-card)',
@@ -95,6 +96,16 @@ const TaskDetailSheet = ({ task, onClose, onDelete }: TaskDetailSheetProps) => {
           Close
         </button>
         <button
+          onClick={onEdit}
+          style={{
+            flex: 1, height: 44, borderRadius: 'var(--radius-md)',
+            background: 'var(--color-yellow)', border: 'none',
+            color: 'var(--color-text-dark)', fontSize: 15, fontWeight: 600, cursor: 'pointer',
+          }}
+        >
+          Edit
+        </button>
+        <button
           onClick={onDelete}
           style={{
             flex: 1, height: 44, borderRadius: 'var(--radius-md)',
@@ -121,7 +132,7 @@ interface DayFolderProps {
 }
 
 export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemoveFailed }: DayFolderProps) => {
-  const { activeDate, setActiveDate, folderExpanded, setFolderExpanded, setAddTaskOpen } = useAppStore();
+  const { activeDate, setActiveDate, folderExpanded, setFolderExpanded, setAddTaskOpen, setEditingTask } = useAppStore();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [direction, setDirection] = useState(0);
   const folderRef = useRef<HTMLDivElement>(null);
@@ -186,6 +197,12 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemove
       console.error('Failed to delete task:', error);
       onRemoveFailed(taskToDelete); // restore the card on failure
     }
+  };
+
+  const handleEditTask = () => {
+    if (!selectedTask) return;
+    setEditingTask(selectedTask);
+    setSelectedTask(null);
   };
 
   return (
@@ -420,6 +437,7 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemove
             <TaskDetailSheet
               task={selectedTask}
               onClose={() => setSelectedTask(null)}
+              onEdit={handleEditTask}
               onDelete={handleDeleteTask}
             />
           </>
