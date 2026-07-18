@@ -4,6 +4,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 export default defineConfig({
+  server: {
+    allowedHosts: ['.ngrok-free.app', '.ngrok-free.dev'],
+  },
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },

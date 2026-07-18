@@ -322,7 +322,7 @@ const TaskPeek = ({
   task, top, zIndex, depth
 }: { task: Task; top: number; zIndex: number; depth: number }) => {
   const bg = CARD_COLORS[task.urgency] ?? 'var(--color-amber-card)';
-  const inset = depth * 10;
+  const inset = depth * 4;
 
   return (
     <div
@@ -383,7 +383,7 @@ const TaskPeek = ({
 const OverflowPeek = ({
   top, zIndex, count, depth
 }: { top: number; zIndex: number; count: number; depth: number }) => {
-  const inset = depth * 10;
+  const inset = depth * 4;
 
   return (
     <div
