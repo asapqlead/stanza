@@ -5,10 +5,10 @@ import { useAppStore } from '../../store/useAppStore';
 import type { NavTab } from '../../types/database.types';
 import { format } from 'date-fns';
 
-const NAV_TABS: { id: NavTab | 'add'; icon: LucideIcon; label: string }[] = [
-  { id: 'home', icon: Home, label: 'Home' },
-  { id: 'add', icon: Plus, label: 'Add Task' },
-  { id: 'calendar', icon: CalendarDays, label: 'Calendar' },
+const NAV_TABS: { id: NavTab | 'add'; icon: LucideIcon; }[] = [
+  { id: 'home', icon: Home },
+  { id: 'add', icon: Plus },
+  { id: 'calendar', icon: CalendarDays },
 ];
 
 interface NavBarProps {
@@ -65,7 +65,7 @@ export const NavBar = ({ onTabChange }: NavBarProps) => {
             key={tab.id}
             role={tab.id === 'add' ? 'button' : 'tab'}
             aria-selected={tab.id === 'add' ? undefined : isActive}
-            aria-label={tab.id === 'add' ? 'Add new task' : `${tab.label}, tab ${i + 1} of 3`}
+            aria-label={tab.id === 'add' ? 'Add new task' : `${tab.id}, tab ${i + 1} of 3`}
             onClick={() => handleTab(tab.id)}
             style={{
               flex: 1,
@@ -113,18 +113,6 @@ export const NavBar = ({ onTabChange }: NavBarProps) => {
                     color={isActive ? 'var(--color-text-dark)' : 'var(--color-grey)'}
                   />
                 </div>
-                {isActive && (
-                  <span style={{
-                    position: 'relative',
-                    zIndex: 1,
-                    fontSize: 9,
-                    fontWeight: 600,
-                    color: 'var(--color-text-dark)',
-                    lineHeight: 1,
-                  }}>
-                    {tab.label}
-                  </span>
-                )}
               </>
             )}
           </button>

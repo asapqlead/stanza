@@ -293,7 +293,7 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemove
               }} />
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
-          ) : tasks.length === 0 ? (
+          ) : pending.length === 0 && !folderExpanded ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -313,18 +313,20 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemove
               }}>
                 <Plus size={28} color="var(--color-grey)" />
               </div>
-              <p style={{ fontSize: 15, color: 'var(--color-grey)', fontWeight: 500 }}>No tasks for today</p>
-              <button
-                onClick={() => setAddTaskOpen(true)}
-                style={{
-                  background: 'var(--color-yellow)', border: 'none',
-                  borderRadius: 'var(--radius-pill)', padding: '10px 20px',
-                  fontSize: 14, fontWeight: 700, color: 'var(--color-text-dark)',
-                  cursor: 'pointer', marginTop: 4,
-                }}
-              >
-                Add a task
-              </button>
+              <p style={{ fontSize: 15, color: 'var(--color-grey)', fontWeight: 500 }}>no tasks for now</p>
+              {completed.length > 0 && (
+                <button
+                  onClick={() => setFolderExpanded(true)}
+                  style={{
+                    background: 'var(--color-yellow)', border: 'none',
+                    borderRadius: 'var(--radius-pill)', padding: '10px 20px',
+                    fontSize: 14, fontWeight: 700, color: 'var(--color-text-dark)',
+                    cursor: 'pointer', marginTop: 4,
+                  }}
+                >
+                  view finished tasks
+                </button>
+              )}
             </motion.div>
           ) : !folderExpanded ? (
             /* Stacked view — reversed: front card at bottom, peeks stacked above */

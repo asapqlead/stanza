@@ -224,6 +224,7 @@ export const TaskCardStacked = ({
             top={top}
             zIndex={zIndex}
             count={overflowCount}
+            depth={totalPeeks - i}
           />
         ) : (
           <TaskPeek
@@ -231,6 +232,7 @@ export const TaskCardStacked = ({
             task={slot.task!}
             top={top}
             zIndex={zIndex}
+            depth={totalPeeks - i}
           />
         );
       })}
@@ -317,17 +319,18 @@ const FrontCard = ({ task, top, zIndex }: { task: Task; top: number; zIndex: num
  * PEEK_HEIGHT is visible before the next card covers the rest.
  */
 const TaskPeek = ({
-  task, top, zIndex,
-}: { task: Task; top: number; zIndex: number }) => {
+  task, top, zIndex, depth
+}: { task: Task; top: number; zIndex: number; depth: number }) => {
   const bg = CARD_COLORS[task.urgency] ?? 'var(--color-amber-card)';
+  const inset = depth * 10;
 
   return (
     <div
       style={{
         position: 'absolute',
         top,
-        left: 0,
-        right: 0,
+        left: inset,
+        right: inset,
         bottom: 0,
         borderRadius: 'var(--radius-lg)',
         background: bg,
@@ -378,15 +381,17 @@ const TaskPeek = ({
  * more than 3 pending tasks.
  */
 const OverflowPeek = ({
-  top, zIndex, count,
-}: { top: number; zIndex: number; count: number }) => {
+  top, zIndex, count, depth
+}: { top: number; zIndex: number; count: number; depth: number }) => {
+  const inset = depth * 10;
+
   return (
     <div
       style={{
         position: 'absolute',
         top,
-        left: 0,
-        right: 0,
+        left: inset,
+        right: inset,
         bottom: 0,
         borderRadius: 'var(--radius-lg)',
         background: 'var(--color-mid)',
