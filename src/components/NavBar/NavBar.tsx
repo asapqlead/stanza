@@ -84,13 +84,16 @@ export const NavBar = ({ onTabChange }: NavBarProps) => {
             }}
           >
             {tab.id === 'add' ? (
-              <div style={{
-                width: 44, height: 44, borderRadius: '50%', background: 'var(--color-yellow)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-              }}>
+              <motion.div 
+                layoutId="add-task-sheet"
+                style={{
+                  width: 44, height: 44, borderRadius: '50%', background: 'var(--color-yellow)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                }}
+              >
                 <Icon size={24} color="var(--color-text-dark)" strokeWidth={2.5} />
-              </div>
+              </motion.div>
             ) : (
               <>
                 {isActive && (

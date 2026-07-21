@@ -128,9 +128,7 @@ export const AddTaskSheet = ({ onOptimisticAdd, onAddFailed }: AddTaskSheetProps
 
           {/* Sheet */}
           <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            layoutId="add-task-sheet"
             transition={{ type: 'spring', stiffness: 280, damping: 28 }}
             style={{
               position: 'fixed',
@@ -143,6 +141,7 @@ export const AddTaskSheet = ({ onOptimisticAdd, onAddFailed }: AddTaskSheetProps
               maxHeight: '90dvh',
               display: 'flex',
               flexDirection: 'column',
+              overflow: 'hidden',
             }}
           >
             {/* Header */}

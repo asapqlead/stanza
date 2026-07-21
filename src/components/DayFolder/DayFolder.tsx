@@ -25,9 +25,7 @@ const TaskDetailSheet = ({ task, onClose, onDelete, onEdit }: TaskDetailSheetPro
 
   return (
     <motion.div
-      initial={{ y: '100%' }}
-      animate={{ y: 0 }}
-      exit={{ y: '100%' }}
+      layoutId={`task-card-${task.id}`}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       style={{
         position: 'fixed',
@@ -209,16 +207,18 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemove
     <>
       <div
         style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
       >
         {/* Large date display */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'space-between',
-          padding: '20px var(--space-xl) 0',
-        }}>
+        <div
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+          style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'space-between',
+            padding: '20px var(--space-xl) 0',
+          }}
+        >
           <div>
             <div style={{
               fontSize: 72,
@@ -269,21 +269,38 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemove
 
           {/* Task count badge */}
           {pending.length > 0 && (
-            <div style={{
-              background: 'var(--color-mid)',
-              borderRadius: 'var(--radius-pill)',
-              padding: '6px 14px',
-              marginBottom: 24,
-            }}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.15, type: 'spring', damping: 25, stiffness: 300 }}
+              style={{
+                background: 'var(--color-mid)',
+                borderRadius: 'var(--radius-pill)',
+                padding: '6px 14px',
+                marginBottom: 24,
+              }}
+            >
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-grey)' }}>
                 {pending.length} task{pending.length !== 1 ? 's' : ''}
               </span>
-            </div>
+            </motion.div>
           )}
         </div>
 
         {/* Folder area */}
-        <div ref={folderRef} style={{ flex: 1, padding: '20px var(--space-xl)', overflow: 'hidden', position: 'relative' }}>
+        <motion.div
+          ref={folderRef}
+          initial="hidden"
+          animate="show"
+          variants={{
+            hidden: { opacity: 0 },
+            show: {
+              opacity: 1,
+              transition: { staggerChildren: 0.1, delayChildren: 0.2 }
+            }
+          }}
+          style={{ flex: 1, padding: '20px var(--space-xl)', overflowY: 'auto', position: 'relative' }}
+        >
           {loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 40 }}>
               <div style={{
@@ -293,127 +310,65 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemove
               }} />
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
-          ) : pending.length === 0 && !folderExpanded ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingTop: 200,
-                gap: 12,
-              }}
-            >
-              <p style={{ fontSize: 15, color: 'var(--color-grey)', fontWeight: 500 }}>no tasks for now</p>
-              {completed.length > 0 && (
-                <button
-                  onClick={() => setFolderExpanded(true)}
+          ) : (
+            <>
+              {pending.length === 0 ? (
+                <motion.div
+                  variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } } }}
                   style={{
-                    background: 'var(--color-yellow)', border: 'none',
-                    borderRadius: 'var(--radius-pill)', padding: '10px 20px',
-                    fontSize: 14, fontWeight: 700, color: 'var(--color-text-dark)',
-                    cursor: 'pointer', marginTop: 4,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingTop: 80,
+                    paddingBottom: 40,
+                    gap: 12,
                   }}
                 >
-                  view finished tasks
-                </button>
+                  <p style={{ fontSize: 15, color: 'var(--color-grey)', fontWeight: 500, textAlign: 'center' }}>
+                    {completed.length > 0 ? "all tasks completed." : "no tasks for now."}
+                  </p>
+                </motion.div>
+              ) : (
+                <motion.div variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } } }}>
+                  <TaskCardStacked
+                    tasks={pending}
+                    onTap={(task) => setSelectedTask(task)}
+                    onToggleComplete={onToggleComplete}
+                  />
+                </motion.div>
               )}
-            </motion.div>
-          ) : !folderExpanded ? (
-            /* Stacked view — reversed: front card at bottom, peeks stacked above */
-            <motion.div
-              style={{ position: 'relative', cursor: 'pointer' }}
-              onClick={() => setFolderExpanded(true)}
-              aria-label={`${formatWeekday(activeDate)}, ${formatDayNum(activeDate)}, ${pending.length} tasks. Tap to expand.`}
-              role="button"
-            >
-              <TaskCardStacked
-                tasks={stackVisible}
-                overflowCount={overflowCount}
-              />
-
-            </motion.div>
-          ) : (
-            /* Expanded list view */
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-                overflowY: 'auto',
-                maxHeight: 'calc(100dvh - 260px)',
-                paddingBottom: 76,
-              }}
-            >
-              {/* Collapse button */}
-              <button
-                onClick={() => setFolderExpanded(false)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: 'var(--color-grey)', fontSize: 12, marginBottom: 4,
-                  padding: '4px 0',
-                }}
-              >
-                <ChevronDown size={14} style={{ transform: 'rotate(180deg)' }} />
-                <span>collapse</span>
-              </button>
-
-              <AnimatePresence>
-                {pending.map((task) => (
-                  <motion.div
-                    key={task.id}
-                    layout
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.95, opacity: 0 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                  >
-                    <TaskCard
-                      task={task}
-                      onTap={() => setSelectedTask(task)}
-                      onToggleComplete={onToggleComplete}
-                    />
-                  </motion.div>
-                ))}
-
-                {completed.length > 0 && (
-                  <>
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: 8,
-                      margin: '8px 0 4px',
-                    }}>
-                      <div style={{ flex: 1, height: 1, background: 'var(--color-mid)' }} />
-                      <span style={{ fontSize: 11, color: 'var(--color-grey)', fontWeight: 500 }}>
-                        COMPLETED
-                      </span>
-                      <div style={{ flex: 1, height: 1, background: 'var(--color-mid)' }} />
-                    </div>
+              {completed.length > 0 && (
+                <motion.div
+                  variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } } }}
+                  style={{ marginTop: pending.length === 0 ? 0 : 24, paddingBottom: 100 }}
+                >
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    margin: '8px 0 12px',
+                  }}>
+                    <div style={{ flex: 1, height: 1, background: 'var(--color-mid)' }} />
+                    <span style={{ fontSize: 11, color: 'var(--color-grey)', fontWeight: 500 }}>
+                      COMPLETED
+                    </span>
+                    <div style={{ flex: 1, height: 1, background: 'var(--color-mid)' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {completed.map((task) => (
-                      <motion.div
-                        key={task.id}
-                        layout
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 0.6 }}
-                        exit={{ opacity: 0 }}
-                      >
+                      <div key={task.id} style={{ opacity: 0.6 }}>
                         <TaskCard
                           task={task}
                           onTap={() => setSelectedTask(task)}
                           onToggleComplete={onToggleComplete}
                         />
-                      </motion.div>
+                      </div>
                     ))}
-                  </>
-                )}
-              </AnimatePresence>
-            </motion.div>
+                  </div>
+                </motion.div>
+              )}
+            </>
           )}
-        </div>
+        </motion.div>
       </div>
 
       {/* Task detail sheet */}

@@ -38,10 +38,10 @@ export default function App() {
         {activeNav === 'home' && (
           <motion.div
             key="home"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.28 }}
+            initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -15, filter: 'blur(4px)' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
             style={{ position: 'absolute', inset: 0 }}
           >
             <Home
@@ -54,10 +54,10 @@ export default function App() {
         {activeNav === 'calendar' && (
           <motion.div
             key="calendar"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.28 }}
+            initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -15, filter: 'blur(4px)' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
             style={{ position: 'absolute', inset: 0 }}
           >
             <Calendar onDateSelect={handleDateSelect} />

@@ -22,29 +22,34 @@ const CARD_COLORS: Record<string, string> = {
 };
 
 export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps) => {
+  const [localCompleted, setLocalCompleted] = useState<boolean | null>(null);
   const [completing, setCompleting] = useState(false);
   const { heavy } = useHaptic();
 
-  const bg = task.completed ? 'var(--color-mid)' : CARD_COLORS[task.urgency] ?? 'var(--color-amber-card)';
-  const textColor = task.completed ? 'var(--color-grey)' : 'var(--color-text-dark)';
+  const isCompleted = localCompleted !== null ? localCompleted : task.completed;
+  const bg = isCompleted ? 'var(--color-mid)' : CARD_COLORS[task.urgency] ?? 'var(--color-amber-card)';
+  const textColor = isCompleted ? 'var(--color-grey)' : 'var(--color-text-dark)';
 
   const handleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
+    const nextCompleted = !isCompleted;
+    setLocalCompleted(nextCompleted);
     setCompleting(true);
     heavy();
 
-    const nextCompleted = !task.completed;
-
-    // Update local state instantly — no waiting on the network/Realtime round trip.
-    onToggleComplete?.(task.id, nextCompleted);
+    // Delay removing the card from the stack so the user sees the completion
+    setTimeout(() => {
+      onToggleComplete?.(task.id, nextCompleted);
+    }, 600);
 
     const request = nextCompleted
       ? completeTask(task.id, task.due_date)
       : uncompleteTask(task.id);
 
-    // Supabase's PostgrestFilterBuilder is thenable but not typed as a real
-    // Promise, so .finally() isn't on its type — wrap it to get one.
-    Promise.resolve(request).finally(() => setCompleting(false));
+    Promise.resolve(request).finally(() => {
+      setCompleting(false);
+      // We don't reset localCompleted here because optimistic update will take over
+    });
   };
 
   return (
@@ -63,13 +68,12 @@ export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps
       whileTap={{ scale: 0.98 }}
     >
       {/* Urgency badge */}
-      {!task.completed && (
+      {!isCompleted && (
         <div style={{
           position: 'absolute',
           top: 12,
           right: 12,
-          background: bg,
-          border: '1.5px solid rgba(0,0,0,0.12)',
+          background: 'rgba(0, 0, 0, 0.08)',
           borderRadius: 'var(--radius-pill)',
           padding: '4px 10px',
           fontSize: 11,
@@ -87,15 +91,15 @@ export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps
           onClick={handleComplete}
           animate={completing ? { scale: [0.9, 1.1, 1] } : {}}
           transition={{ duration: 0.3 }}
-          aria-label={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
+          aria-label={`Mark ${task.title} as ${isCompleted ? 'incomplete' : 'complete'}`}
           style={{
             width: 26,
             height: 26,
             borderRadius: '50%',
-            border: task.completed
+            border: isCompleted
               ? 'none'
               : '2px solid rgba(0,0,0,0.3)',
-            background: task.completed ? 'rgba(0,0,0,0.25)' : 'transparent',
+            background: isCompleted ? 'rgba(0,0,0,0.25)' : 'transparent',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -106,7 +110,7 @@ export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps
           }}
         >
           <AnimatePresence>
-            {task.completed && (
+            {isCompleted && (
               <motion.div
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -130,9 +134,9 @@ export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
-            textDecoration: task.completed ? 'line-through' : 'none',
-            opacity: task.completed ? 0.6 : 1,
-            paddingRight: task.completed ? 0 : 66,
+            textDecoration: isCompleted ? 'line-through' : 'none',
+            opacity: isCompleted ? 0.6 : 1,
+            paddingRight: isCompleted ? 0 : 66,
             transition: 'opacity 0.2s',
           }}>
             {task.title}
@@ -173,249 +177,125 @@ export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps
 };
 
 /* ------------------------------------------------------------------------
- * Wallet-style card stack (iOS-inspired).
- * Cards stack vertically — peek cards sit ABOVE the front card, each
- * showing a strip with the task title visible. The front (fully-detailed)
- * card is at the BOTTOM of the stack, fully expanded.
- * All cards share the same width (no horizontal inset).
- * Only 3 slots are shown. If there are more than 3 pending tasks a
- * grey "+N" card takes the topmost peek slot.
+ * Swipeable Deck (Premium feel)
+ * Cards stack with the front card fully visible and interactive.
+ * Swiping the front card cycles it to the back of the deck.
  * ---------------------------------------------------------------------- */
-const PEEK_HEIGHT = 64;       // how much of each peeking card is visible
-const FRONT_HEIGHT = 200;     // full front card height
 
 export const TaskCardStacked = ({
   tasks,
-  overflowCount = 0,
+  onTap,
+  onToggleComplete
 }: {
   tasks: Task[];
-  overflowCount?: number;
+  onTap?: (task: Task) => void;
+  onToggleComplete?: (taskId: string, completed: boolean) => void;
 }) => {
+  const [deckOffset, setDeckOffset] = useState(0);
+
   if (tasks.length === 0) return null;
 
-  const hasOverflow = overflowCount > 0;
-  const peekTasks = tasks.slice(1);      // everything except the front card
+  // We rotate the tasks array based on deckOffset so the "front" card changes
+  const visibleTasks = [...tasks];
+  for (let i = 0; i < deckOffset % tasks.length; i++) {
+    visibleTasks.push(visibleTasks.shift()!);
+  }
 
-  // Build peek slots — furthest-back first (top of visual stack),
-  // nearest to front last (just above the front card).
-  // If overflow exists it's the very top slot.
-  const peekSlots: { type: 'overflow' | 'task'; task?: Task }[] = [
-    ...(hasOverflow ? [{ type: 'overflow' as const }] : []),
-    ...[...peekTasks].reverse().map(t => ({ type: 'task' as const, task: t })),
-  ];
-
-  const totalPeeks = peekSlots.length;
-  const containerHeight = FRONT_HEIGHT + totalPeeks * PEEK_HEIGHT;
+  // Render up to 3 cards for performance and visual clarity
+  const renderCards = visibleTasks.slice(0, 3).reverse();
 
   return (
     <div style={{
       position: 'relative',
-      height: containerHeight,
+      height: 220,
       width: '100%',
-      overflow: 'hidden',
-      borderRadius: 'var(--radius-lg)',
+      perspective: 1000,
     }}>
-      {peekSlots.map((slot, i) => {
-        const top = i * PEEK_HEIGHT;
-        const zIndex = i + 1;
-        return slot.type === 'overflow' ? (
-          <OverflowPeek
-            key="overflow"
-            top={top}
-            zIndex={zIndex}
-            count={overflowCount}
-            depth={totalPeeks - i}
-          />
-        ) : (
-          <TaskPeek
-            key={slot.task!.id}
-            task={slot.task!}
-            top={top}
-            zIndex={zIndex}
-            depth={totalPeeks - i}
-          />
-        );
-      })}
-
-      {/* Front card — at the bottom, highest zIndex, fully expanded */}
-      <FrontCard
-        task={tasks[0]}
-        top={totalPeeks * PEEK_HEIGHT}
-        zIndex={totalPeeks + 1}
-      />
+      <AnimatePresence>
+        {renderCards.map((task, i) => {
+          const isFront = i === renderCards.length - 1;
+          const indexFromFront = renderCards.length - 1 - i;
+          
+          return (
+            <DeckCard
+              key={task.id}
+              task={task}
+              isFront={isFront}
+              indexFromFront={indexFromFront}
+              onSwipe={() => setDeckOffset(prev => prev + 1)}
+              onTap={() => onTap?.(task)}
+              onToggleComplete={onToggleComplete}
+            />
+          );
+        })}
+      </AnimatePresence>
     </div>
   );
 };
 
-const FrontCard = ({ task, top, zIndex }: { task: Task; top: number; zIndex: number }) => {
-  const bg = CARD_COLORS[task.urgency] ?? 'var(--color-amber-card)';
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        top,
-        left: 0,
-        right: 0,
-        height: FRONT_HEIGHT,
-        borderRadius: 'var(--radius-lg)',
-        background: bg,
-        overflow: 'hidden',
-        zIndex,
-        boxShadow: '0 -4px 12px rgba(0,0,0,0.25), 0 -1px 3px rgba(0,0,0,0.15)',
-      }}
-    >
-      <div style={{ padding: '20px var(--space-xl)', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: -4 }}>
-          <div style={{
-            background: 'rgba(0,0,0,0.15)', borderRadius: 'var(--radius-pill)',
-            padding: '5px 14px', fontSize: 11, fontWeight: 700,
-            color: 'var(--color-text-dark)', letterSpacing: 0.4,
-          }}>
-            {task.urgency}
-          </div>
-        </div>
-
-        <p style={{
-          fontSize: 30, fontWeight: 700, color: 'var(--color-text-dark)',
-          lineHeight: 1.25, marginTop: 4, overflow: 'hidden',
-          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-        }}>
-          {task.title}
-        </p>
-
-        <p style={{
-          fontSize: 14, color: 'rgba(28,28,30,0.65)', marginTop: 8, lineHeight: 1.4,
-          overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-        }}>
-          {task.description || 'Add a description...'}
-        </p>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 'auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Calendar size={15} color="rgba(28,28,30,0.55)" />
-            <span style={{ fontSize: 15, color: 'rgba(28,28,30,0.55)', fontWeight: 500 }}>
-              {formatShortDate(task.due_date)}
-            </span>
-          </div>
-          {task.due_time && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Clock size={15} color="rgba(28,28,30,0.55)" />
-              <span style={{ fontSize: 15, color: 'rgba(28,28,30,0.55)', fontWeight: 500 }}>
-                {formatTime(task.due_time)}
-              </span>
-            </div>
-          )}
-        </div>
-
-
-      </div>
-    </div>
-  );
-};
-
-/**
- * Peek card — sits above the front card showing a visible strip with the
- * task title and priority badge. Full-height card behind, only the top
- * PEEK_HEIGHT is visible before the next card covers the rest.
- */
-const TaskPeek = ({
-  task, top, zIndex, depth
-}: { task: Task; top: number; zIndex: number; depth: number }) => {
-  const bg = CARD_COLORS[task.urgency] ?? 'var(--color-amber-card)';
-  const inset = depth * 4;
+const DeckCard = ({
+  task,
+  isFront,
+  indexFromFront,
+  onSwipe,
+  onTap,
+  onToggleComplete
+}: {
+  task: Task;
+  isFront: boolean;
+  indexFromFront: number;
+  onSwipe: () => void;
+  onTap: () => void;
+  onToggleComplete?: (taskId: string, completed: boolean) => void;
+}) => {
+  const handleDragEnd = (e: any, info: any) => {
+    const threshold = 100;
+    if (Math.abs(info.offset.y) > threshold) {
+      onSwipe();
+    }
+  };
 
   return (
-    <div
+    <motion.div
+      layoutId={`task-card-${task.id}`}
+      drag={isFront ? "y" : false}
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={0.8}
+      onDragEnd={handleDragEnd}
       style={{
         position: 'absolute',
-        top,
-        left: inset,
-        right: inset,
-        bottom: 0,
-        borderRadius: 'var(--radius-lg)',
-        background: bg,
-        zIndex,
-        boxShadow: '0 -4px 12px rgba(0,0,0,0.25), 0 -1px 3px rgba(0,0,0,0.15)',
-        overflow: 'hidden',
+        top: 0, left: 0, right: 0,
+        height: 200,
+        zIndex: isFront ? 10 : 10 - indexFromFront,
       }}
-    >
-      {/* Title row — visible in the peek strip */}
-      <div style={{
-        height: PEEK_HEIGHT,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 20px',
-      }}>
-        <p style={{
-          fontSize: 16,
-          fontWeight: 700,
-          color: 'var(--color-text-dark)',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          flex: 1,
-          marginRight: 12,
-        }}>
-          {task.title}
-        </p>
-        <div style={{
-          flexShrink: 0,
-          background: 'rgba(0,0,0,0.1)',
-          borderRadius: 'var(--radius-pill)',
-          padding: '4px 10px',
-          fontSize: 10,
-          fontWeight: 700,
-          color: 'var(--color-text-dark)',
-          letterSpacing: 0.5,
-        }}>
-          {task.urgency}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-/**
- * Grey "+N more" card — topmost peek slot, shown only when there are
- * more than 3 pending tasks.
- */
-const OverflowPeek = ({
-  top, zIndex, count, depth
-}: { top: number; zIndex: number; count: number; depth: number }) => {
-  const inset = depth * 4;
-
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        top,
-        left: inset,
-        right: inset,
-        bottom: 0,
-        borderRadius: 'var(--radius-lg)',
-        background: 'var(--color-mid)',
-        zIndex,
-        boxShadow: '0 -4px 12px rgba(0,0,0,0.25), 0 -1px 3px rgba(0,0,0,0.15)',
-        overflow: 'hidden',
+      initial={{ 
+        y: indexFromFront * 15, 
+        scale: 1 - indexFromFront * 0.05,
+        opacity: 0
       }}
+      animate={{
+        y: indexFromFront * 15,
+        scale: 1 - indexFromFront * 0.05,
+        opacity: 1 - indexFromFront * 0.2,
+      }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 28 }}
     >
-      <div style={{
-        height: PEEK_HEIGHT,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <span style={{
-          fontSize: 13,
-          fontWeight: 700,
-          color: 'var(--color-grey)',
-          letterSpacing: 0.3,
-        }}>
-          +{count} more
-        </span>
+      <div 
+        onClick={() => { if (isFront) onTap(); }}
+        style={{
+          width: '100%',
+          height: '100%',
+          pointerEvents: isFront ? 'auto' : 'none'
+        }}
+      >
+        <TaskCard
+          task={task}
+          onToggleComplete={onToggleComplete}
+          style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+        />
       </div>
-    </div>
+    </motion.div>
   );
 };
 
