@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef, useEffect } from 'react';
-import { Plus, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useSwipe } from '../../hooks/useSwipe';
 import { TaskCard, TaskCardStacked } from '../TaskCard/TaskCard';
@@ -60,7 +60,7 @@ const TaskDetailSheet = ({ task, onClose, onDelete, onEdit }: TaskDetailSheetPro
         letterSpacing: 0.5,
         marginBottom: 12,
       }}>
-        {task.urgency.toUpperCase()}
+        {task.urgency}
       </div>
 
       <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, lineHeight: 1.3 }}>
@@ -302,17 +302,10 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemove
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                paddingTop: 60,
+                paddingTop: 200,
                 gap: 12,
               }}
             >
-              <div style={{
-                width: 60, height: 60, borderRadius: 'var(--radius-md)',
-                background: 'var(--color-card)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Plus size={28} color="var(--color-grey)" />
-              </div>
               <p style={{ fontSize: 15, color: 'var(--color-grey)', fontWeight: 500 }}>no tasks for now</p>
               {completed.length > 0 && (
                 <button

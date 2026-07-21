@@ -67,11 +67,11 @@ export default function App() {
         {activeNav === 'settings' && (
           <motion.div
             key="settings"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.28 }}
-            style={{ position: 'absolute', inset: 0 }}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            style={{ position: 'absolute', inset: 0, zIndex: 10 }}
           >
             <Settings />
           </motion.div>

@@ -272,7 +272,7 @@ export const EditTaskSheet = ({ onOptimisticUpdate, onUpdateFailed }: EditTaskSh
                         letterSpacing: 0.3,
                       }}
                     >
-                      {u.toUpperCase()}
+                      {u}
                     </button>
                   ))}
                 </div>

@@ -12,9 +12,13 @@ interface TopBarProps {
 export const TopBar = ({ onAvatarTap, onDateTap, displayName, avatarUrl }: TopBarProps) => {
   const { activeDate, setActiveNav } = useAppStore();
 
-  const initials = displayName
-    ? displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-    : '?';
+  const hour = new Date().getHours();
+  let greeting = 'good evening';
+  if (hour < 12) greeting = 'good morning';
+  else if (hour < 18) greeting = 'good afternoon';
+
+  const firstName = displayName ? displayName.split(' ')[0] : '';
+  const greetingText = firstName ? `${greeting}, ${firstName}` : greeting;
 
   return (
     <div style={{
@@ -25,52 +29,14 @@ export const TopBar = ({ onAvatarTap, onDateTap, displayName, avatarUrl }: TopBa
       position: 'relative',
       zIndex: 10,
     }}>
-      {/* Avatar */}
-      <button
-        onClick={onAvatarTap}
-        aria-label={`Open profile for ${displayName ?? 'user'}`}
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: '50%',
-          background: avatarUrl ? 'transparent' : 'var(--color-yellow)',
-          border: '2px solid rgba(255,255,255,0.15)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          overflow: 'hidden',
-          flexShrink: 0,
-        }}
-      >
-        {avatarUrl ? (
-          <img src={avatarUrl} alt={displayName ?? 'avatar'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : (
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-dark)' }}>{initials}</span>
-        )}
-      </button>
-
-      {/* Date info */}
-      <button
-        onClick={onDateTap}
-        aria-label={`${formatWeekday(activeDate)} ${formatDayNum(activeDate)}, double-tap to open calendar`}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          gap: 2,
-        }}
-      >
-        <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-grey)', letterSpacing: 0.5 }}>
-          {formatWeekday(activeDate).toUpperCase()}
-        </span>
-        <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-white)' }}>
-          {formatDayNum(activeDate)} {formatMonth(activeDate)}
-        </span>
-      </button>
+      <h1 style={{
+        fontSize: 24,
+        fontWeight: 700,
+        color: 'var(--color-white)',
+        letterSpacing: '0.2px'
+      }}>
+        {greetingText}
+      </h1>
 
       {/* Settings button */}
       <button

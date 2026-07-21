@@ -77,7 +77,7 @@ export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps
           color: 'var(--color-text-dark)',
           letterSpacing: '0.5px',
         }}>
-          {task.urgency.toUpperCase()}
+          {task.urgency}
         </div>
       )}
 
@@ -271,7 +271,7 @@ const FrontCard = ({ task, top, zIndex }: { task: Task; top: number; zIndex: num
             padding: '5px 14px', fontSize: 11, fontWeight: 700,
             color: 'var(--color-text-dark)', letterSpacing: 0.4,
           }}>
-            {task.urgency.toUpperCase()}
+            {task.urgency}
           </div>
         </div>
 
@@ -369,7 +369,7 @@ const TaskPeek = ({
           color: 'var(--color-text-dark)',
           letterSpacing: 0.5,
         }}>
-          {task.urgency.toUpperCase()}
+          {task.urgency}
         </div>
       </div>
     </div>

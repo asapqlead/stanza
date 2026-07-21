@@ -283,7 +283,7 @@ export const AddTaskSheet = ({ onOptimisticAdd, onAddFailed }: AddTaskSheetProps
                         letterSpacing: 0.3,
                       }}
                     >
-                      {u.toUpperCase()}
+                      {u}
                     </button>
                   ))}
                 </div>
