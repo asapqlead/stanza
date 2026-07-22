@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
@@ -372,27 +373,30 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemove
       </div>
 
       {/* Task detail sheet */}
-      <AnimatePresence>
-        {selectedTask && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedTask(null)}
-              style={{
-                position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 199,
-              }}
-            />
-            <TaskDetailSheet
-              task={selectedTask}
-              onClose={() => setSelectedTask(null)}
-              onEdit={handleEditTask}
-              onDelete={handleDeleteTask}
-            />
-          </>
-        )}
-      </AnimatePresence>
+      {createPortal(
+        <AnimatePresence>
+          {selectedTask && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedTask(null)}
+                style={{
+                  position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 199,
+                }}
+              />
+              <TaskDetailSheet
+                task={selectedTask}
+                onClose={() => setSelectedTask(null)}
+                onEdit={handleEditTask}
+                onDelete={handleDeleteTask}
+              />
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 };

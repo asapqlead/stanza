@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -108,7 +109,7 @@ export const AddTaskSheet = ({ onOptimisticAdd, onAddFailed }: AddTaskSheetProps
     fontFamily: 'var(--font-family)',
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {addTaskOpen && (
         <>
@@ -312,6 +313,7 @@ export const AddTaskSheet = ({ onOptimisticAdd, onAddFailed }: AddTaskSheetProps
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -94,7 +95,7 @@ export const EditTaskSheet = ({ onOptimisticUpdate, onUpdateFailed }: EditTaskSh
     fontFamily: 'var(--font-family)',
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {editingTask && (
         <>
@@ -302,6 +303,7 @@ export const EditTaskSheet = ({ onOptimisticUpdate, onUpdateFailed }: EditTaskSh
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
