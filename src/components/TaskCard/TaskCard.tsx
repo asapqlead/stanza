@@ -106,16 +106,16 @@ export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps
             flexShrink: 0,
             marginTop: 3,
             cursor: 'pointer',
-            transition: 'background 0.2s',
+            transition: 'background 200ms ease-out',
           }}
         >
           <AnimatePresence>
             {isCompleted && (
               <motion.div
-                initial={{ scale: 0, opacity: 0 }}
+                initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
               >
                 <Check size={16} color="var(--color-grey)" strokeWidth={3} />
               </motion.div>
@@ -137,7 +137,7 @@ export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps
             textDecoration: isCompleted ? 'line-through' : 'none',
             opacity: isCompleted ? 0.6 : 1,
             paddingRight: isCompleted ? 0 : 66,
-            transition: 'opacity 0.2s',
+            transition: 'opacity 200ms ease-out',
           }}>
             {task.title}
           </p>

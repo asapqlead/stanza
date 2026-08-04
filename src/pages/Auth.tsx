@@ -23,7 +23,7 @@ export const Auth = () => {
     color: 'var(--color-white)',
     outline: 'none',
     fontFamily: 'var(--font-family)',
-    transition: 'border-color 0.2s',
+    transition: 'border-color 200ms ease-out',
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -127,7 +127,7 @@ export const Auth = () => {
               border: 'none', cursor: 'pointer',
               fontSize: 14, fontWeight: 700,
               color: mode === m ? 'var(--color-text-dark)' : 'var(--color-grey)',
-              transition: 'all 0.2s',
+              transition: 'background 200ms ease-out, color 200ms ease-out',
             }}
           >
             {m === 'signin' ? 'Sign In' : 'Sign Up'}

@@ -54,7 +54,7 @@ export const Settings = () => {
     color: 'var(--color-white)',
     outline: 'none',
     fontFamily: 'var(--font-family)',
-    transition: 'border-color 0.2s',
+    transition: 'border-color 200ms ease-out',
   };
 
   return (
@@ -120,10 +120,10 @@ export const Settings = () => {
                 fontSize: 14, fontWeight: 700,
                 color: saved ? '#48C774' : 'var(--color-text-dark)',
                 cursor: saving ? 'not-allowed' : 'pointer',
-                transition: 'background 0.3s, color 0.3s',
+                transition: 'background 200ms ease-out, color 200ms ease-out',
               }}
             >
-              {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save Name'}
+              {saving ? 'Saving…' : saved ? 'Saved' : 'Save Name'}
             </motion.button>
           </div>
         </div>

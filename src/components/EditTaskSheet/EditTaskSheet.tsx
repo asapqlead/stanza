@@ -91,7 +91,7 @@ export const EditTaskSheet = ({ onOptimisticUpdate, onUpdateFailed }: EditTaskSh
     fontSize: 15,
     color: 'var(--color-white)',
     outline: 'none',
-    transition: 'border-color 0.2s',
+    transition: 'border-color 200ms ease-out',
     fontFamily: 'var(--font-family)',
   };
 
@@ -104,7 +104,7 @@ export const EditTaskSheet = ({ onOptimisticUpdate, onUpdateFailed }: EditTaskSh
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             onClick={handleClose}
             style={{
               position: 'fixed', inset: 0,
@@ -269,7 +269,7 @@ export const EditTaskSheet = ({ onOptimisticUpdate, onUpdateFailed }: EditTaskSh
                         fontWeight: 700,
                         color: 'var(--color-text-dark)',
                         cursor: 'pointer',
-                        transition: 'border-color 0.15s',
+                        transition: 'border-color 200ms ease-out',
                         letterSpacing: 0.3,
                       }}
                     >
@@ -294,7 +294,7 @@ export const EditTaskSheet = ({ onOptimisticUpdate, onUpdateFailed }: EditTaskSh
                   color: 'var(--color-text-dark)',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   marginTop: 4,
-                  transition: 'background 0.2s',
+                  transition: 'background 200ms ease-out',
                 }}
               >
                 {isSubmitting ? 'Saving…' : 'Save Changes'}
