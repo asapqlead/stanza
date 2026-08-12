@@ -16,7 +16,7 @@ export const SplashScreen = () => (
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <img src="/icons/stanza-logo.png" alt="" style={{ height: 48, objectFit: 'contain' }} />
+        <img src="/icons/stanza-logo-2.jpg" alt="" style={{ height: 48, objectFit: 'contain' }} />
         <h1 style={{ fontSize: 40, fontWeight: 700, letterSpacing: -1, lineHeight: 1 }}>
           Stanza
         </h1>
