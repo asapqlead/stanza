@@ -1,5 +1,5 @@
 import { parseISO } from 'date-fns';
-import { today as getToday } from './date';
+import { today as getToday, prevDay } from './date';
 
 /**
  * Calculates the consecutive day streak given an array of unique date strings (YYYY-MM-DD)
@@ -17,10 +17,8 @@ export function calculateStreak(completedDates: string[], referenceDateStr: stri
   
   let streak = 0;
   
-  // Compute yesterday's string correctly
-  const d = parseISO(referenceDateStr);
-  d.setDate(d.getDate() - 1);
-  const yesterdayStr = d.toISOString().split('T')[0];
+  // Compute yesterday's string correctly without timezone issues
+  const yesterdayStr = prevDay(referenceDateStr);
 
   // If the most recent completed task is older than yesterday, the streak is broken (0).
   if (sortedDates[0] < yesterdayStr) {
@@ -37,7 +35,7 @@ export function calculateStreak(completedDates: string[], referenceDateStr: stri
     if (streak === 0) {
       if (currentStr === referenceDateStr || currentStr === yesterdayStr) {
         streak++;
-        expectedNextDateStr = getPreviousDateStr(currentStr);
+        expectedNextDateStr = prevDay(currentStr);
       } else {
         // First date is older than yesterday, so 0 streak
         break;
@@ -45,7 +43,7 @@ export function calculateStreak(completedDates: string[], referenceDateStr: stri
     } else {
       if (currentStr === expectedNextDateStr) {
         streak++;
-        expectedNextDateStr = getPreviousDateStr(currentStr);
+        expectedNextDateStr = prevDay(currentStr);
       } else {
         // Gap found
         break;
@@ -54,10 +52,4 @@ export function calculateStreak(completedDates: string[], referenceDateStr: stri
   }
 
   return streak;
-}
-
-function getPreviousDateStr(dateStr: string): string {
-  const d = parseISO(dateStr);
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().split('T')[0];
 }
