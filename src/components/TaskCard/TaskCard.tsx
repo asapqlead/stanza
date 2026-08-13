@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useState } from 'react';
 import { Calendar, Clock, Check, Share2 } from 'lucide-react';
 import type { Task } from '../../types/database.types';
@@ -12,6 +12,7 @@ interface TaskCardProps {
   /** Called immediately (before the network call resolves) so the UI updates on the fly. */
   onToggleComplete?: (taskId: string, completed: boolean) => void;
   style?: React.CSSProperties;
+  isLastTask?: boolean;
 }
 
 const CARD_COLORS: Record<string, string> = {
@@ -21,9 +22,12 @@ const CARD_COLORS: Record<string, string> = {
   Blocked: 'var(--color-purple-card)',
 };
 
-export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps) => {
+export const TaskCard = ({ task, onTap, onToggleComplete, style, isLastTask }: TaskCardProps) => {
   const [localCompleted, setLocalCompleted] = useState<boolean | null>(null);
   const [completing, setCompleting] = useState(false);
+  const [showBurst, setShowBurst] = useState(false);
+  const [burstText, setBurstText] = useState("");
+  const shouldReduceMotion = useReducedMotion();
   const { heavy } = useHaptic();
 
   const isCompleted = localCompleted !== null ? localCompleted : task.completed;
@@ -36,6 +40,18 @@ export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps
     setLocalCompleted(nextCompleted);
     setCompleting(true);
     heavy();
+
+    if (nextCompleted) {
+      setShowBurst(true);
+      // 30% chance to show a tiny celebration text
+      if (Math.random() < 0.3 || isLastTask) {
+        const phrases = ["nice.", "done.", "✓ noted", "boom."];
+        setBurstText(phrases[Math.floor(Math.random() * phrases.length)]);
+      } else {
+        setBurstText("");
+      }
+      setTimeout(() => setShowBurst(false), 800);
+    }
 
     // Delay removing the card from the stack so the user sees the completion
     setTimeout(() => {
@@ -66,6 +82,8 @@ export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps
         ...style,
       }}
       whileTap={{ scale: 0.98 }}
+      animate={showBurst && !shouldReduceMotion ? { scale: isLastTask ? [1, 1.04, 1] : [1, 1.02, 1] } : { scale: 1 }}
+      transition={showBurst ? { duration: 0.4, ease: "easeOut" } : { duration: 0.2 }}
     >
       {/* Urgency badge */}
       {!isCompleted && (
@@ -107,8 +125,61 @@ export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps
             marginTop: 3,
             cursor: 'pointer',
             transition: 'background 200ms ease-out',
+            position: 'relative',
           }}
         >
+          {showBurst && !shouldReduceMotion && (
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+              {Array.from({ length: isLastTask ? 8 : 5 }).map((_, i, arr) => {
+                const angle = (i * (360 / arr.length)) * (Math.PI / 180);
+                const distance = isLastTask ? 30 : 20;
+                const x = Math.cos(angle) * distance;
+                const y = Math.sin(angle) * distance;
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
+                    animate={{ x, y, scale: 1, opacity: 0 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      width: 4,
+                      height: 4,
+                      background: 'var(--color-yellow)',
+                      borderRadius: '50%',
+                      transform: 'translate(-50%, -50%)',
+                    }}
+                  />
+                );
+              })}
+            </div>
+          )}
+
+          <AnimatePresence>
+            {showBurst && burstText && (
+              <motion.div
+                initial={{ opacity: 0, y: 0, scale: 0.8 }}
+                animate={{ opacity: 1, y: -24, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 32,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: 'var(--color-yellow)',
+                  pointerEvents: 'none',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {burstText}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <AnimatePresence>
             {isCompleted && (
               <motion.div
@@ -182,14 +253,20 @@ export const TaskCard = ({ task, onTap, onToggleComplete, style }: TaskCardProps
  * Swiping the front card cycles it to the back of the deck.
  * ---------------------------------------------------------------------- */
 
+import { useLongPress } from '../../hooks/useLongPress';
+
 export const TaskCardStacked = ({
   tasks,
   onTap,
-  onToggleComplete
+  onToggleComplete,
+  isExpanded,
+  onLongPress
 }: {
   tasks: Task[];
   onTap?: (task: Task) => void;
   onToggleComplete?: (taskId: string, completed: boolean) => void;
+  isExpanded?: boolean;
+  onLongPress?: () => void;
 }) => {
   const [deckOffset, setDeckOffset] = useState(0);
 
@@ -204,15 +281,21 @@ export const TaskCardStacked = ({
   // Render up to 3 cards for performance and visual clarity
   const renderCards = visibleTasks.slice(0, 3).reverse();
 
+  const longPressHandlers = useLongPress(() => {
+    onLongPress?.();
+  }, undefined, { delay: 400 });
+
   return (
-    <div style={{
+    <div 
+      {...longPressHandlers}
+      style={{
       position: 'relative',
       height: 220,
       width: '100%',
       perspective: 1000,
     }}>
       <AnimatePresence>
-        {renderCards.map((task, i) => {
+        {!isExpanded && renderCards.map((task, i) => {
           const isFront = i === renderCards.length - 1;
           const indexFromFront = renderCards.length - 1 - i;
           
@@ -225,6 +308,7 @@ export const TaskCardStacked = ({
               onSwipe={() => setDeckOffset(prev => prev + 1)}
               onTap={() => onTap?.(task)}
               onToggleComplete={onToggleComplete}
+              isLastTask={isFront && tasks.length === 1}
             />
           );
         })}
@@ -239,7 +323,8 @@ const DeckCard = ({
   indexFromFront,
   onSwipe,
   onTap,
-  onToggleComplete
+  onToggleComplete,
+  isLastTask
 }: {
   task: Task;
   isFront: boolean;
@@ -247,6 +332,7 @@ const DeckCard = ({
   onSwipe: () => void;
   onTap: () => void;
   onToggleComplete?: (taskId: string, completed: boolean) => void;
+  isLastTask?: boolean;
 }) => {
   const handleDragEnd = (e: any, info: any) => {
     const threshold = 100;
@@ -293,6 +379,7 @@ const DeckCard = ({
           task={task}
           onToggleComplete={onToggleComplete}
           style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+          isLastTask={isLastTask}
         />
       </div>
     </motion.div>

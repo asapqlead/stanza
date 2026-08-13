@@ -46,4 +46,24 @@ export const getTaskCountsByDate = async (year: number, month: number) => {
     .lte('due_date', end);
 };
 
+export const getCompletedTaskDates = async (limit: number = 90) => {
+  // To get distinct dates, we can just fetch due_date where completed=true 
+  // and deduplicate client-side, since there shouldn't be thousands of tasks.
+  // We'll limit the query to recent tasks (e.g. last N days).
+  const d = new Date();
+  d.setDate(d.getDate() - limit);
+  const start = d.toISOString().split('T')[0];
+  
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('due_date')
+    .eq('completed', true)
+    .gte('due_date', start)
+    .order('due_date', { ascending: false });
+    
+  if (error || !data) return [];
+  
+  return [...new Set(data.map(t => t.due_date))];
+};
+
 export type { UrgencyLevel };

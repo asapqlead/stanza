@@ -5,8 +5,11 @@ import { ChevronDown } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useSwipe } from '../../hooks/useSwipe';
 import { TaskCard, TaskCardStacked } from '../TaskCard/TaskCard';
+import { TaskFolderExpanded } from '../TaskCard/TaskFolderExpanded';
 import { nextDay, prevDay, formatWeekday, formatDayNum, formatMonth } from '../../utils/date';
 import { pendingTasks, completedTasks } from '../../utils/sort';
+import { useStreak } from '../../hooks/useStreak';
+import { DaySummaryCard } from './DaySummaryCard';
 import type { Task } from '../../types/database.types';
 
 interface TaskDetailSheetProps {
@@ -136,6 +139,7 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemove
   const [direction, setDirection] = useState(0);
   const folderRef = useRef<HTMLDivElement>(null);
   const [folderHeight, setFolderHeight] = useState(0);
+  const { streakCount } = useStreak();
 
   // Measure the available folder area height
   useEffect(() => {
@@ -313,36 +317,36 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemove
             </div>
           ) : (
             <>
-              {pending.length === 0 ? (
-                <motion.div
-                  variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } } }}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    paddingTop: 80,
-                    paddingBottom: 40,
-                    gap: 12,
-                  }}
-                >
-                  <p style={{ fontSize: 15, color: 'var(--color-grey)', fontWeight: 500, textAlign: 'center' }}>
-                    {completed.length > 0 ? "all tasks completed." : "no tasks for now."}
-                  </p>
-                </motion.div>
-              ) : (
+              {pending.length > 0 && (
                 <motion.div variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } } }}>
                   <TaskCardStacked
                     tasks={pending}
                     onTap={(task) => setSelectedTask(task)}
                     onToggleComplete={onToggleComplete}
+                    isExpanded={folderExpanded}
+                    onLongPress={() => {
+                      if ('vibrate' in navigator) navigator.vibrate(50);
+                      setFolderExpanded(true);
+                    }}
                   />
                 </motion.div>
               )}
+
+              <motion.div
+                variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } } }}
+                style={{ marginTop: pending.length === 0 ? 40 : 24 }}
+              >
+                <DaySummaryCard
+                  pendingCount={pending.length}
+                  completedCount={completed.length}
+                  streakCount={streakCount}
+                />
+              </motion.div>
+
               {completed.length > 0 && (
                 <motion.div
                   variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } } }}
-                  style={{ marginTop: pending.length === 0 ? 0 : 24, paddingBottom: 100 }}
+                  style={{ marginTop: 32, paddingBottom: 100 }}
                 >
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: 8,
@@ -397,6 +401,18 @@ export const DayFolder = ({ tasks, loading, onToggleComplete, onRemove, onRemove
         </AnimatePresence>,
         document.body
       )}
+
+      {/* Task folder expansion view */}
+      <AnimatePresence>
+        {folderExpanded && (
+          <TaskFolderExpanded
+            tasks={pending}
+            onClose={() => setFolderExpanded(false)}
+            onTapTask={(task) => setSelectedTask(task)}
+            onToggleComplete={onToggleComplete}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 };
